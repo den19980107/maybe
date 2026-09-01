@@ -14,6 +14,12 @@ class Balance::BaseCalculator
       @sync_cache ||= Balance::SyncCache.new(account)
     end
 
+    # Historical records can contain dates older than the supported calculation
+    # window. Never allow those records to turn a sync into a multi-century loop.
+    def safe_opening_anchor_date
+      [ account.opening_anchor_date, Entry.min_supported_date ].max
+    end
+
     def holdings_value_for_date(date)
       @holdings_value_for_date ||= {}
       @holdings_value_for_date[date] ||= sync_cache.get_holdings(date).sum(&:amount)

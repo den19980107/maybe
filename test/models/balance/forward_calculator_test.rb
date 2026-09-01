@@ -581,6 +581,29 @@ class Balance::ForwardCalculatorTest < ActiveSupport::TestCase
     )
   end
 
+  test "bounds an invalidly old opening anchor date" do
+    account = create_account_with_ledger(
+      account: { type: Depository, currency: "USD" },
+      entries: []
+    )
+    old_entry = Struct.new(:date).new(Date.new(100, 2, 28))
+    entries_relation = Object.new
+    entries_relation.define_singleton_method(:order) { |_column| self }
+    entries_relation.define_singleton_method(:last) { old_entry }
+    entries_relation.define_singleton_method(:to_a) { [] }
+
+    account.stub(:entries, entries_relation) do
+      account.stub(:opening_anchor_date, Date.new(100, 2, 28)) do
+      Entry.stub(:min_supported_date, Date.current - 2.days) do
+        calculated = Balance::ForwardCalculator.new(account).calculate
+
+        assert_equal Entry.min_supported_date, calculated.first.date
+        assert_equal 3, calculated.size
+      end
+      end
+    end
+  end
+
   private
     def assert_balances(calculated_data:, expected_balances:)
       # Sort calculated data by date to ensure consistent ordering

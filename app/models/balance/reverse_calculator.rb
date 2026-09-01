@@ -10,7 +10,7 @@ class Balance::ReverseCalculator < Balance::BaseCalculator
       end_non_cash_balance = account.current_anchor_balance - end_cash_balance
 
       # Calculates in reverse-chronological order (End of day -> Start of day)
-      account.current_anchor_date.downto(account.opening_anchor_date).map do |date|
+      account.current_anchor_date.downto(safe_opening_anchor_date).map do |date|
         flows = flows_for_date(date)
 
         if use_opening_anchor_for_date?(date)
@@ -77,6 +77,6 @@ class Balance::ReverseCalculator < Balance::BaseCalculator
     # to be used at all. This is primarily to keep the code and the UI easy to understand. For a more detailed
     # explanation, see the test suite.
     def use_opening_anchor_for_date?(date)
-      account.has_opening_anchor? && date == account.opening_anchor_date
+      account.has_opening_anchor? && date == safe_opening_anchor_date
     end
 end

@@ -3,7 +3,7 @@ class Balance::ForwardCalculator < Balance::BaseCalculator
     Rails.logger.tagged("Balance::ForwardCalculator") do
       start_cash_balance = derive_cash_balance_on_date_from_total(
         total_balance: account.opening_anchor_balance,
-        date: account.opening_anchor_date
+        date: safe_opening_anchor_date
       )
       start_non_cash_balance = account.opening_anchor_balance - start_cash_balance
 
@@ -53,11 +53,13 @@ class Balance::ForwardCalculator < Balance::BaseCalculator
 
   private
     def calc_start_date
-      account.opening_anchor_date
+      safe_opening_anchor_date
     end
 
     def calc_end_date
-      [ account.entries.order(:date).last&.date, account.holdings.order(:date).last&.date ].compact.max || Date.current
+      [ safe_opening_anchor_date,
+        account.entries.order(:date).last&.date,
+        account.holdings.order(:date).last&.date ].compact.max || Date.current
     end
 
     # Negative entries amount on an "asset" account means, "account value has increased"
