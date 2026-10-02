@@ -1,0 +1,39 @@
+<div class="space-y-6">
+  <p><%= link_to "← Back to account", account_path(@account), class: "text-primary underline" %></p>
+  <h1 class="text-2xl font-medium text-primary">Investment purchase-cost ledger</h1>
+  <p class="text-secondary">Buy-only, cumulative purchases in <%= @account.currency %>. These figures are not remaining cost basis after sales or stock splits and do not affect account value, holdings or cash. Enter broker-adjusted share quantities and actual total paid (including fees) where applicable.</p>
+
+  <%= form_with model: @purchase, url: account_investment_cost_entries_path(@account), class: "space-y-3" do |form| %>
+    <% if @purchase.errors.any? %>
+      <div role="alert" class="text-primary"><%= @purchase.errors.full_messages.to_sentence %></div>
+    <% end %>
+    <div><%= form.label :date, "Purchase date" %> <%= form.date_field :date, required: true %></div>
+    <div><%= form.label :ticker %> <%= form.text_field :ticker, required: true %></div>
+    <div><%= form.label :quantity, "Shares purchased" %> <%= form.number_field :quantity, min: 0, step: :any, required: true %></div>
+    <div><%= form.label :price_per_share, "Price per share (#{@account.currency})" %> <%= form.number_field :price_per_share, min: 0, step: :any, required: true %></div>
+    <div><%= form.label :total_paid, "Actual total paid (#{@account.currency}, optional; defaults to shares × price)" %> <%= form.number_field :total_paid, min: 0, step: :any %></div>
+    <%= form.submit "Record purchase", class: "cursor-pointer underline" %>
+  <% end %>
+
+  <h2 class="text-xl font-medium text-primary">Cumulative purchases by ticker</h2>
+  <table class="w-full text-left">
+    <thead><tr><th>Ticker</th><th>Purchased shares</th><th>Total paid (<%= @account.currency %>)</th><th>Weighted average paid/share (<%= @account.currency %>)</th></tr></thead>
+    <tbody>
+      <% @summary.sort.each do |ticker, row| %>
+        <tr><td><%= ticker %></td><td><%= number_with_precision(row[:quantity], precision: 10, strip_insignificant_zeros: true) %></td><td><%= number_with_precision(row[:total_paid], precision: 2) %></td><td><%= number_with_precision(row[:average_cost], precision: 4) %></td></tr>
+      <% end %>
+    </tbody>
+  </table>
+  <p class="font-medium">Total cumulative purchases: <%= @account.currency %> <%= number_with_precision(@summary.values.sum { |row| row[:total_paid] }, precision: 2) %></p>
+
+  <h2 class="text-xl font-medium text-primary">Purchase history (running totals)</h2>
+  <table class="w-full text-left">
+    <thead><tr><th>Date</th><th>Ticker</th><th>Shares bought</th><th>Price/share</th><th>Actual paid</th><th>Running shares</th><th>Running paid</th><th>Running average/share</th></tr></thead>
+    <tbody>
+      <% @rows.each do |row| %>
+        <% entry = row[:entry] %>
+        <tr><td><%= entry.date %></td><td><%= entry.ticker %></td><td><%= entry.quantity %></td><td><%= entry.price_per_share %></td><td><%= entry.total_paid %></td><td><%= row[:quantity] %></td><td><%= row[:total_paid] %></td><td><%= number_with_precision(row[:average_cost], precision: 4) %></td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

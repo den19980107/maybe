@@ -57,9 +57,13 @@ class Balance::ForwardCalculator < Balance::BaseCalculator
     end
 
     def calc_end_date
-      [ safe_opening_anchor_date,
-        account.entries.order(:date).last&.date,
-        account.holdings.order(:date).last&.date ].compact.max || Date.current
+      last_source_date = [ account.entries.order(:date).last&.date,
+                           account.holdings.order(:date).last&.date ].compact.max
+      # A legacy source date before the supported floor must not truncate the
+      # calculation to a single day. Ordinary historical ranges stay unchanged.
+      return Date.current if last_source_date && last_source_date < safe_opening_anchor_date
+
+      [ safe_opening_anchor_date, last_source_date ].compact.max
     end
 
     # Negative entries amount on an "asset" account means, "account value has increased"

@@ -1,0 +1,14 @@
+# Preview based on the exact tag used by production, with fork's date fix and isolated cost-ledger code.
+FROM ghcr.io/den19980107/maybe:paul-fix-balance-20260901
+USER root
+COPY --chown=1000:1000 --chmod=644 app/models/holding.rb /rails/app/models/holding.rb
+COPY --chown=1000:1000 --chmod=644 app/models/balance/forward_calculator.rb /rails/app/models/balance/forward_calculator.rb
+COPY --chown=1000:1000 app/models/account.rb /rails/app/models/account.rb
+COPY --chown=1000:1000 app/models/investment_cost_entry.rb /rails/app/models/investment_cost_entry.rb
+COPY --chown=1000:1000 app/controllers/investment_cost_entries_controller.rb /rails/app/controllers/investment_cost_entries_controller.rb
+COPY --chown=1000:1000 app/views/accounts/show/_menu.html.erb /rails/app/views/accounts/show/_menu.html.erb
+COPY --chown=1000:1000 app/views/investment_cost_entries/index.html.erb /rails/app/views/investment_cost_entries/index.html.erb
+COPY --chown=1000:1000 config/routes.rb /rails/config/routes.rb
+COPY --chown=1000:1000 db/migrate/20261002000000_create_investment_cost_entries.rb /rails/db/migrate/20261002000000_create_investment_cost_entries.rb
+COPY --chown=1000:1000 db/schema.rb /rails/db/schema.rb
+USER 1000:1000

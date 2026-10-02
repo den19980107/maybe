@@ -3,6 +3,10 @@
 <%= render DS::Menu.new(testid: "account-menu") do |menu| %>
   <% menu.with_item(variant: "link", text: "Edit", href: edit_account_path(account), icon: "pencil-line", data: { turbo_frame: :modal }) %>
 
+  <% if account.investment_cost_ledger_available? %>
+    <% menu.with_item(variant: "link", text: "Purchase-cost ledger", href: account_investment_cost_entries_path(account), icon: "list", data: { turbo_frame: :_top }) %>
+  <% end %>
+
   <% unless account.crypto? %>
     <% menu.with_item(
       variant: "link",

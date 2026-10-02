@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_07_24_115507) do
+ActiveRecord::Schema[7.2].define(version: 2026_10_02_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -381,6 +381,20 @@ ActiveRecord::Schema[7.2].define(version: 2025_07_24_115507) do
     t.string "amount_type_strategy", default: "signed_amount"
     t.string "amount_type_inflow_value"
     t.index ["family_id"], name: "index_imports_on_family_id"
+  end
+
+  create_table "investment_cost_entries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "account_id", null: false
+    t.date "date", null: false
+    t.string "ticker", null: false
+    t.decimal "quantity", precision: 24, scale: 10, null: false
+    t.decimal "price_per_share", precision: 24, scale: 10, null: false
+    t.decimal "total_paid", precision: 24, scale: 8, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "ticker", "date"], name: "idx_on_account_id_ticker_date_46a839e8f7"
+    t.index ["account_id"], name: "index_investment_cost_entries_on_account_id"
+    t.check_constraint "quantity > 0::numeric AND price_per_share > 0::numeric AND total_paid > 0::numeric", name: "investment_cost_entries_positive_amounts"
   end
 
   create_table "investments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -846,6 +860,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_07_24_115507) do
   add_foreign_key "impersonation_sessions", "users", column: "impersonator_id"
   add_foreign_key "import_rows", "imports"
   add_foreign_key "imports", "families"
+  add_foreign_key "investment_cost_entries", "accounts"
   add_foreign_key "invitations", "families"
   add_foreign_key "invitations", "users", column: "inviter_id"
   add_foreign_key "merchants", "families"

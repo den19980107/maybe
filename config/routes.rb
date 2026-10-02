@@ -157,6 +157,7 @@ Rails.application.routes.draw do
   end
 
   resources :accounts, only: %i[index new show destroy], shallow: true do
+    resources :investment_cost_entries, only: %i[index create]
     member do
       post :sync
       get :sparkline

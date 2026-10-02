@@ -12,6 +12,7 @@ class Account < ApplicationRecord
   has_many :valuations, through: :entries, source: :entryable, source_type: "Valuation"
   has_many :trades, through: :entries, source: :entryable, source_type: "Trade"
   has_many :holdings, dependent: :destroy
+  has_many :investment_cost_entries, dependent: :destroy
   has_many :balances, dependent: :destroy
 
   monetize :balance, :cash_balance
@@ -112,6 +113,28 @@ class Account < ApplicationRecord
                           .order(:security_id, date: :desc)
             )
             .order(amount: :desc)
+  end
+
+  def investment_cost_ledger_available?
+    accountable_type == "Investment" && plaid_account_id.nil? && entries.valuations.exists?
+  end
+
+  # Cumulative purchases only; never inferred from holdings or valuations.
+  def investment_cost_ledger
+    totals = {}
+    investment_cost_entries.order(:date, :id).map do |purchase|
+      running = totals[purchase.ticker] ||= { quantity: 0.to_d, total_paid: 0.to_d }
+      running[:quantity] += purchase.quantity
+      running[:total_paid] += purchase.total_paid
+      { entry: purchase, quantity: running[:quantity], total_paid: running[:total_paid],
+        average_cost: running[:total_paid] / running[:quantity] }
+    end
+  end
+
+  def investment_cost_summary
+    investment_cost_ledger.each_with_object({}) do |row, summary|
+      summary[row[:entry].ticker] = row.except(:entry)
+    end
   end
 
   def start_date

@@ -25,9 +25,9 @@ class Holding < ApplicationRecord
     account.balance.zero? ? 1 : amount / account.balance * 100
   end
 
-  # Basic approximation of cost-basis
+  # Weight purchase prices by shares, converting each trade at its historical rate.
   def avg_cost
-    avg_cost = account.trades
+    purchases = account.trades
       .with_entry
       .joins(ActiveRecord::Base.sanitize_sql_array([
         "LEFT JOIN exchange_rates ON (
@@ -38,9 +38,10 @@ class Holding < ApplicationRecord
       ]))
       .where(security_id: security.id)
       .where("trades.qty > 0 AND entries.date <= ?", date)
-      .average("trades.price * COALESCE(exchange_rates.rate, 1)")
 
-    Money.new(avg_cost || price, currency)
+    total_cost = purchases.sum("trades.qty * trades.price * COALESCE(exchange_rates.rate, 1)")
+    total_qty = purchases.sum("trades.qty")
+    Money.new(total_qty.positive? ? total_cost / total_qty : price, account.currency)
   end
 
   def trend
